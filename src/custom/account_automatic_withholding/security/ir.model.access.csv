@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_account_retention_rule_user,account.retention.rule.user,model_account_retention_rule,account.group_account_user,1,0,0,0
+access_account_retention_rule_manager,account.retention.rule.manager,model_account_retention_rule,account.group_account_manager,1,1,1,1
+access_account_retention_user,account.retention.user,model_account_retention,account.group_account_user,1,1,1,0
+access_account_retention_manager,account.retention.manager,model_account_retention,account.group_account_manager,1,1,1,1
+access_account_retention_line_user,account.retention.line.user,model_account_retention_line,account.group_account_user,1,1,1,0
+access_account_retention_line_manager,account.retention.line.manager,model_account_retention_line,account.group_account_manager,1,1,1,1

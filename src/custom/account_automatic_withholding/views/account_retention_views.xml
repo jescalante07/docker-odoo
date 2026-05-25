@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Vista Lista - Retenciones                                    -->
+    <!-- ============================================================ -->
+    <record id="account_retention_list_view" model="ir.ui.view">
+        <field name="name">account.retention.tree</field>
+        <field name="model">account.retention</field>
+        <field name="arch" type="xml">
+            <tree string="Retenciones Fiscales"
+                  decoration-muted="state == 'cancel'"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'posted'">
+                <field name="name" string="Nº Retención"/>
+                <field name="date"/>
+                <field name="partner_id" string="Contacto"/>
+                <field name="fiscal_profile"
+                       widget="badge"
+                       decoration-info="fiscal_profile == 'standard'"
+                       decoration-warning="fiscal_profile == 'retention_agent'"/>
+                <field name="retention_type"
+                       widget="badge"
+                       decoration-primary="retention_type == 'sale'"
+                       decoration-info="retention_type == 'purchase'"/>
+                <field name="invoice_name" string="Factura"/>
+                <field name="amount_total" string="Total Retenido"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="state"
+                       widget="badge"
+                       decoration-warning="state == 'draft'"
+                       decoration-success="state == 'posted'"
+                       decoration-danger="state == 'cancel'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Formulario - Retención                                 -->
+    <!-- ============================================================ -->
+    <record id="account_retention_form_view" model="ir.ui.view">
+        <field name="name">account.retention.form</field>
+        <field name="model">account.retention</field>
+        <field name="arch" type="xml">
+            <form string="Retención Fiscal">
+                <header>
+                    <button name="action_post"
+                            string="Validar"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            groups="account.group_account_user"/>
+                    <button name="action_draft"
+                            string="Restablecer a Borrador"
+                            type="object"
+                            invisible="state != 'posted'"
+                            groups="account.group_account_manager"/>
+                    <button name="action_cancel"
+                            string="Cancelar"
+                            type="object"
+                            invisible="state == 'cancel'"
+                            groups="account.group_account_manager"
+                            confirm="¿Está seguro de cancelar esta retención? Se revertirá el asiento contable."/>
+                    <field name="state"
+                           widget="statusbar"
+                           statusbar_visible="draft,posted,cancel"/>
+                </header>
+                <sheet>
+                    <!-- Stat buttons -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_accounting_entry"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-file-text-o"
+
+                                groups="account.group_account_user"> <!--invisible="not move_id"-->
+                            <span class="o_stat_text">Asiento</span>
+                        </button>
+                        <button name="action_view_invoice"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-file-invoice"
+                                invisible="not invoice_id"
+                                groups="account.group_account_user">
+                            <span class="o_stat_text">Factura</span>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Información General">
+                            <field name="partner_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="fiscal_profile" readonly="1"/>
+                            <field name="retention_type"
+                                   readonly="state != 'draft'"/>
+                            <field name="date"
+                                   readonly="state != 'draft'"/>
+                            <field name="currency_id"
+                                   groups="base.group_multi_currency"
+                                   readonly="1"/>
+                        </group>
+                        <group string="Referencia">
+                            <field name="invoice_id"
+                                   readonly="state != 'draft'"
+                                   domain="[('move_type', 'in', ['out_invoice','out_refund','in_invoice','in_refund']), ('state', '=', 'posted')]"/>
+                            <field name="invoice_name" readonly="1" invisible="not invoice_id"/>
+                            <field name="invoice_date" readonly="1" invisible="not invoice_id"/>
+                            <field name="invoice_amount_total"
+                                   readonly="1"
+                                   invisible="not invoice_id"/>
+                            <field name="journal_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Líneas de retención -->
+                    <notebook>
+                        <page string="Líneas de Retención" name="lines_page">
+                            <field name="line_ids"
+                                   readonly="state != 'draft'"
+                                   widget="one2many_list"
+                                   mode="tree">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name" required="1"/>
+                                    <field name="rule_id" optional="show"/>
+                                    <field name="tax_id" optional="show"/>
+                                    <field name="account_id" required="1"/>
+                                    <field name="retention_basis" optional="show"/>
+                                    <field name="base_amount"/>
+                                    <field name="percentage"/>
+                                    <field name="amount" required="1"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </tree>
+                            </field>
+                            <!-- Total -->
+                            <group class="oe_subtotal_footer">
+                                <field name="amount_total"
+                                       string="Total Retenido"
+                                       readonly="1"
+                                       class="oe_subtotal_footer_separator"/>
+                                <field name="currency_id" invisible="1"/>
+                            </group>
+                        </page>
+
+                        <page string="Notas" name="notes_page">
+                            <field name="notes"
+                                   readonly="state != 'draft'"
+                                   placeholder="Observaciones internas sobre esta retención..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Búsqueda - Retenciones                                 -->
+    <!-- ============================================================ -->
+    <record id="account_retention_search_view" model="ir.ui.view">
+        <field name="name">account.retention.search</field>
+        <field name="model">account.retention</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Retenciones">
+                <field name="name" string="Número"/>
+                <field name="partner_id" string="Contacto"/>
+                <field name="invoice_id" string="Factura"/>
+                <separator/>
+                <filter string="Borrador" name="filter_draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="Validadas" name="filter_posted"
+                        domain="[('state', '=', 'posted')]"/>
+                <filter string="Canceladas" name="filter_cancel"
+                        domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter string="Ventas" name="filter_sale"
+                        domain="[('retention_type', '=', 'sale')]"/>
+                <filter string="Compras" name="filter_purchase"
+                        domain="[('retention_type', '=', 'purchase')]"/>
+                <separator/>
+                <filter string="Este Mes" name="filter_this_month"
+                        domain="[('date', '&gt;=', (context_today()).strftime('%Y-%m-01'))]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Contacto" name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter string="Perfil Fiscal" name="group_fiscal_profile"
+                            context="{'group_by': 'fiscal_profile'}"/>
+                    <filter string="Tipo" name="group_type"
+                            context="{'group_by': 'retention_type'}"/>
+                    <filter string="Estado" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Mes" name="group_month"
+                            context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Acción principal - Retenciones                               -->
+    <!-- ============================================================ -->
+    <record id="action_account_retention" model="ir.actions.act_window">
+        <field name="name">Retenciones Fiscales</field>
+        <field name="res_model">account.retention</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_filter_posted': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ¡Sin retenciones registradas!
+            </p>
+            <p>
+                Las retenciones se generan automáticamente al confirmar facturas
+                de clientes/proveedores con perfil fiscal que requiera retención.
+                Configure las reglas en
+                <strong>Configuración → Reglas de Retención</strong>.
+            </p>
+        </field>
+    </record>
+
+    <!-- Acción para retenciones en borrador -->
+    <record id="action_account_retention_draft" model="ir.actions.act_window">
+        <field name="name">Retenciones en Borrador</field>
+        <field name="res_model">account.retention</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', '=', 'draft')]</field>
+    </record>
+
+</odoo>

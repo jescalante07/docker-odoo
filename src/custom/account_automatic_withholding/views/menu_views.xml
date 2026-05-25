@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Menú principal: Contabilidad > Retenciones                   -->
+    <!-- ============================================================ -->
+    <menuitem
+        id="menu_account_retention_root"
+        name="Retenciones"
+        parent="account.menu_finance_receivables"
+        sequence="125"
+        groups="account.group_account_user"/>
+
+    <menuitem
+        id="menu_account_retention_list"
+        name="Retenciones Fiscales"
+        parent="menu_account_retention_root"
+        action="action_account_retention"
+        sequence="1"
+        groups="account.group_account_user"/>
+
+    <menuitem
+        id="menu_account_retention_draft"
+        name="Retenciones Pendientes"
+        parent="menu_account_retention_root"
+        action="action_account_retention_draft"
+        sequence="2"
+        groups="account.group_account_user"/>
+
+    <!-- ============================================================ -->
+    <!-- Menú configuración: Contabilidad > Config > Retenciones      -->
+    <!-- ============================================================ -->
+    <menuitem
+        id="menu_account_retention_config"
+        name="Reglas de Retención"
+        parent="account.menu_account_config"
+        action="action_account_retention_rule"
+        sequence="50"
+        groups="account.group_account_manager"/>
+
+</odoo>

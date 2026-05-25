@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <!--
+    NOTA: Las reglas de retención requieren cuentas contables reales
+    Contabilidad > Configuración > Reglas de Retención
+    -->
+    <data noupdate="0"/>
+</odoo>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Vista Lista - Reglas de Retención                            -->
+    <!-- ============================================================ -->
+    <record id="account_retention_rule_list_view" model="ir.ui.view">
+        <field name="name">account.retention.rule.tree</field>
+        <field name="model">account.retention.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Reglas de Retención"
+                  default_group_by="fiscal_profile"
+                  editable="bottom"
+                  decoration-muted="not active">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="fiscal_profile"
+                       widget="badge"
+                       decoration-info="fiscal_profile == 'standard'"
+                       decoration-warning="fiscal_profile == 'retention_agent'"
+                       decoration-success="fiscal_profile == 'simplified'"
+                       decoration-danger="fiscal_profile == 'exempt'"/>
+                <field name="retention_type"
+                       widget="badge"
+                       decoration-primary="retention_type == 'sale'"
+                       decoration-info="retention_type == 'purchase'"/>
+                <field name="percentage" string="%" />
+                <field name="retention_basis"/>
+                <field name="account_id"/>
+                <field name="tax_ids" widget="many2many_tags" optional="show"/>
+                <field name="active" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Formulario - Reglas de Retención                       -->
+    <!-- ============================================================ -->
+    <record id="account_retention_rule_form_view" model="ir.ui.view">
+        <field name="name">account.retention.rule.form</field>
+        <field name="model">account.retention.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de Retención">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"
+                                   placeholder="Nombre de la regla..."
+                                   required="1"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Configuración de Aplicación">
+                            <field name="fiscal_profile"/>
+                            <field name="retention_type"/>
+                            <field name="retention_basis"/>
+                            <field name="sequence"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Cálculo y Contabilidad">
+                            <field name="percentage" string="Porcentaje (%)"/>
+                            <field name="account_id"/>
+                            <field name="journal_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+
+                    <group string="Filtro por Impuestos">
+                        <field name="tax_ids"
+                               widget="many2many_tags"
+                               nolabel="1"
+                               colspan="2"
+                               placeholder="Dejar vacío para aplicar a todas las facturas..."
+                               domain="[('active', '=', True)]"/>
+                    </group>
+
+                    <group string="Descripción en Comprobante">
+                        <field name="description"
+                               nolabel="1"
+                               colspan="2"
+                               placeholder="Texto que aparecerá en las líneas de retención generadas..."/>
+                    </group>
+
+                    <!-- Ayuda contextual -->
+                    <div class="alert alert-info" role="alert">
+                        <strong>¿Cómo funciona esta regla?</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>
+                                Aplica a contactos con perfil fiscal
+                                <strong>
+                                    <field name="fiscal_profile"
+                                           readonly="1"
+                                           nolabel="1"
+                                           class="d-inline"/>
+                                </strong>
+                                en facturas de
+                                <strong>
+                                    <field name="retention_type"
+                                           readonly="1"
+                                           nolabel="1"
+                                           class="d-inline"/>
+                                </strong>.
+                            </li>
+                            <li>
+                                Retiene el
+                                <strong>
+                                    <field name="percentage"
+                                           readonly="1"
+                                           nolabel="1"
+                                           class="d-inline"/>%
+                                </strong>
+                                calculado sobre
+                                <strong>
+                                    <field name="retention_basis"
+                                           readonly="1"
+                                           nolabel="1"
+                                           class="d-inline"/>
+                                </strong>.
+                            </li>
+                        </ul>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Búsqueda - Reglas de Retención                         -->
+    <!-- ============================================================ -->
+    <record id="account_retention_rule_search_view" model="ir.ui.view">
+        <field name="name">account.retention.rule.search</field>
+        <field name="model">account.retention.rule</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Reglas de Retención">
+                <field name="name" string="Nombre"/>
+                <field name="fiscal_profile" string="Perfil Fiscal"/>
+                <separator/>
+                <filter string="Ventas" name="filter_sale"
+                        domain="[('retention_type', '=', 'sale')]"/>
+                <filter string="Compras" name="filter_purchase"
+                        domain="[('retention_type', '=', 'purchase')]"/>
+                <separator/>
+                <filter string="Estándar" name="filter_standard"
+                        domain="[('fiscal_profile', '=', 'standard')]"/>
+                <filter string="Agente de Retención" name="filter_agent"
+                        domain="[('fiscal_profile', '=', 'retention_agent')]"/>
+                <filter string="Simplificado" name="filter_simplified"
+                        domain="[('fiscal_profile', '=', 'simplified')]"/>
+                <separator/>
+                <filter string="Activas" name="filter_active"
+                        domain="[('active', '=', True)]"/>
+                <filter string="Archivadas" name="filter_archived"
+                        domain="[('active', '=', False)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Perfil Fiscal" name="group_fiscal_profile"
+                            context="{'group_by': 'fiscal_profile'}"/>
+                    <filter string="Tipo" name="group_retention_type"
+                            context="{'group_by': 'retention_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Acción - Reglas de Retención                                 -->
+    <!-- ============================================================ -->
+    <record id="action_account_retention_rule" model="ir.actions.act_window">
+        <field name="name">Reglas de Retención</field>
+        <field name="res_model">account.retention.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ¡Crea tu primera regla de retención!
+            </p>
+            <p>
+                Las reglas definen qué porcentaje retener según el perfil fiscal
+                del contacto. Se aplican automáticamente al confirmar facturas.
+            </p>
+        </field>
+    </record>
+
+</odoo>
