@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Vista Lista - Reglas de Reabastecimiento                     -->
+    <!-- ============================================================ -->
+    <record id="stock_replenishment_rule_list_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.rule.tree</field>
+        <field name="model">stock.replenishment.rule</field>
+        <field name="arch" type="xml">
+            <!--
+                FIX: En Odoo 17 el elemento raíz de la vista lista es <list>, no <tree>.
+                     <tree> sigue siendo aceptado como alias pero <list> es el canónico.
+                     Además se corrige default_group_by que va en el contexto de la acción,
+                     no en el atributo de la vista.
+            -->
+            <tree string="Reglas de Reabastecimiento"
+                  decoration-danger="replenishment_priority == 'high'"
+                  decoration-warning="replenishment_priority == 'medium'"
+                  decoration-muted="state == 'done'">
+                <field name="name" string="Producto"/>
+                <field name="replenishment_priority"
+                       widget="badge"
+                       decoration-danger="replenishment_priority == 'high'"
+                       decoration-warning="replenishment_priority == 'medium'"
+                       decoration-info="replenishment_priority == 'low'"/>
+                <field name="qty_available" string="Disponible"/>
+                <field name="target_stock" string="Objetivo"/>
+                <field name="shortage"
+                       string="Déficit"
+                       decoration-danger="shortage &gt; 0"/>
+                <field name="warehouse_responsible_id" string="Responsable"/>
+                <field name="state"
+                       widget="badge"
+                       decoration-warning="state == 'pending'"
+                       decoration-info="state == 'in_progress'"
+                       decoration-success="state == 'done'"/>
+                <button name="action_mark_in_progress"
+                        type="object"
+                        string="En Proceso"
+                        icon="fa-play"
+                        invisible="state != 'pending'"
+                        groups="stock.group_stock_user"/>
+                <button name="action_mark_done"
+                        type="object"
+                        string="Completado"
+                        icon="fa-check"
+                        invisible="state not in ('in_progress', 'pending')"
+                        groups="stock.group_stock_manager"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Kanban - Dashboard de Reabastecimiento por Prioridad   -->
+    <!-- ============================================================ -->
+    <record id="stock_replenishment_rule_kanban_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.rule.kanban</field>
+        <field name="model">stock.replenishment.rule</field>
+        <field name="arch" type="xml">
+            <kanban string="Dashboard de Reabastecimiento"
+                    default_group_by="replenishment_priority"
+                    class="o_kanban_small_column"
+                    quick_create="false">
+                <field name="name"/>
+                <field name="replenishment_priority"/>
+                <field name="qty_available"/>
+                <field name="target_stock"/>
+                <field name="shortage"/>
+                <field name="state"/>
+                <field name="warehouse_responsible_id"/>
+                <field name="product_id"/>
+
+                <templates>
+                    <!--
+                        FIX CRÍTICO: En Odoo 17 el template del kanban se llama "card",
+                        NO "kanban-box". El nombre "kanban-box" era de Odoo 16 y anteriores.
+                        Con "kanban-box" la tarjeta no renderiza en v17.
+                    -->
+                    <t t-name="card">
+                        <div t-attf-class="
+                            #{record.replenishment_priority.raw_value == 'high' ? 'border-danger border-start border-3' : ''}
+                            #{record.replenishment_priority.raw_value == 'medium' ? 'border-warning border-start border-3' : ''}
+                            #{record.replenishment_priority.raw_value == 'low' ? 'border-info border-start border-3' : ''}">
+
+                            <!-- Header con nombre del producto y badge de prioridad -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong class="fs-6">
+                                    <field name="product_id"/>
+                                </strong>
+                                <span t-attf-class="badge ms-2
+                                    #{record.replenishment_priority.raw_value == 'high' ? 'text-bg-danger' : ''}
+                                    #{record.replenishment_priority.raw_value == 'medium' ? 'text-bg-warning' : ''}
+                                    #{record.replenishment_priority.raw_value == 'low' ? 'text-bg-info' : ''}">
+                                    <field name="replenishment_priority"/>
+                                </span>
+                            </div>
+
+                            <!-- Stock Info -->
+                            <div class="mb-1">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted small">Disponible:</span>
+                                    <span class="fw-bold"><field name="qty_available"/></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted small">Objetivo:</span>
+                                    <span><field name="target_stock"/></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted small">Déficit:</span>
+                                    <span class="fw-bold text-danger"><field name="shortage"/></span>
+                                </div>
+                            </div>
+
+                            <!-- Footer: estado y responsable -->
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                <field name="state" widget="label_selection"
+                                       options="{'classes': {'pending': 'warning', 'in_progress': 'info', 'done': 'success'}}"/>
+                                <img t-att-src="kanban_image('res.users', 'image_128', record.warehouse_responsible_id.raw_value)"
+                                     t-att-title="record.warehouse_responsible_id.value"
+                                     class="oe_kanban_avatar o_image_24_cover rounded-circle"
+                                     alt="Responsable"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista Formulario - Regla de Reabastecimiento                 -->
+    <!-- ============================================================ -->
+    <record id="stock_replenishment_rule_form_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.rule.form</field>
+        <field name="model">stock.replenishment.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de Reabastecimiento">
+                <header>
+                    <button name="action_mark_in_progress"
+                            string="Marcar En Proceso"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'pending'"
+                            groups="stock.group_stock_user"/>
+                    <button name="action_mark_done"
+                            string="Marcar Completado"
+                            type="object"
+                            class="btn-success"
+                            invisible="state == 'done'"
+                            groups="stock.group_stock_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="pending,in_progress,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_product"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-cube">
+                            <span class="o_stat_text">Ver Producto</span>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Producto">
+                            <field name="product_id"/>
+                            <field name="replenishment_priority"
+                                   widget="badge"
+                                   decoration-danger="replenishment_priority == 'high'"
+                                   decoration-warning="replenishment_priority == 'medium'"
+                                   decoration-info="replenishment_priority == 'low'"/>
+                            <field name="warehouse_responsible_id"/>
+                        </group>
+                        <group string="Niveles de Stock">
+                            <field name="qty_available" readonly="1"/>
+                            <field name="target_stock" readonly="1"/>
+                            <field name="shortage" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Actividad Asociada" invisible="not activity_id">
+                        <field name="activity_id" readonly="1"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Vista de búsqueda                                            -->
+    <!-- ============================================================ -->
+    <record id="stock_replenishment_rule_search_view" model="ir.ui.view">
+        <field name="name">stock.replenishment.rule.search</field>
+        <field name="model">stock.replenishment.rule</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Reabastecimientos">
+                <field name="product_id" string="Producto"/>
+                <field name="warehouse_responsible_id" string="Responsable"/>
+                <separator/>
+                <filter string="Prioridad Alta" name="filter_high"
+                        domain="[('replenishment_priority', '=', 'high')]"/>
+                <filter string="Prioridad Media" name="filter_medium"
+                        domain="[('replenishment_priority', '=', 'medium')]"/>
+                <filter string="Prioridad Baja" name="filter_low"
+                        domain="[('replenishment_priority', '=', 'low')]"/>
+                <separator/>
+                <filter string="Pendientes" name="filter_pending"
+                        domain="[('state', '=', 'pending')]"/>
+                <filter string="En Proceso" name="filter_in_progress"
+                        domain="[('state', '=', 'in_progress')]"/>
+                <filter string="Completados" name="filter_done"
+                        domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter string="Con Déficit" name="filter_shortage"
+                        domain="[('shortage', '&gt;', 0)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Prioridad" name="group_by_priority"
+                            context="{'group_by': 'replenishment_priority'}"/>
+                    <filter string="Estado" name="group_by_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Responsable" name="group_by_responsible"
+                            context="{'group_by': 'warehouse_responsible_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Acción principal para la vista de reabastecimiento           -->
+    <!-- ============================================================ -->
+    <!--
+        FIX: Se eliminó el atributo view_id de la acción y se usa view_ids
+             con el orden correcto list → kanban → form para Odoo 17.
+             Esto garantiza que la vista de lista sea la predeterminada
+             y el kanban esté disponible como segunda opción.
+    -->
+    <record id="action_stock_replenishment_rules" model="ir.actions.act_window">
+        <field name="name">Reabastecimiento por Prioridad</field>
+        <field name="res_model">stock.replenishment.rule</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('stock_replenishment_rule_list_view')}),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('stock_replenishment_rule_kanban_view')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('stock_replenishment_rule_form_view')}),
+        ]"/>
+        <field name="context">{'search_default_filter_pending': 1, 'search_default_group_by_priority': 1}</field>
+        <field name="domain">[('state', '!=', 'done')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ¡Sin alertas de reabastecimiento!
+            </p>
+            <p>
+                Todos los productos están sobre su stock objetivo.
+                Configure el stock objetivo en los productos para activar
+                las alertas automáticas de reabastecimiento.
+            </p>
+        </field>
+    </record>
+
+    <!-- Acción para ejecutar verificación manualmente -->
+    <record id="action_run_replenishment_check" model="ir.actions.server">
+        <field name="name">Verificar Reabastecimiento Ahora</field>
+        <field name="model_id" ref="model_stock_replenishment_rule"/>
+        <field name="state">code</field>
+        <field name="code">model.run_replenishment_check()</field>
+        <field name="binding_model_id" ref="model_stock_replenishment_rule"/>
+        <field name="binding_view_types">tree</field>
+    </record>
+
+</odoo>

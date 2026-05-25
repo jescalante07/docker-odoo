@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Herencia de la vista formulario de producto                  -->
+    <!-- ============================================================ -->
+    <record id="product_template_form_view_replenishment" model="ir.ui.view">
+        <field name="name">product.template.form.replenishment</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <!-- Añadir página de pestaña de reabastecimiento -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Reabastecimiento" name="replenishment_page"
+                      groups="stock.group_stock_user">
+                    <group>
+                        <group string="Configuración de Reabastecimiento">
+                            <!--
+                                FIX: widget="priority" en Odoo 17 solo funciona con
+                                campos Selection que tengan valores '0','1','2','3'.
+                                Nuestro campo usa 'low','medium','high', por lo que
+                                se usa el widget predeterminado (select) que muestra
+                                correctamente las etiquetas localizadas.
+                            -->
+                            <field name="replenishment_priority"/>
+                            <field name="target_stock"/>
+                            <field name="needs_replenishment"
+                                   readonly="1"
+                                   widget="boolean_toggle"/>
+                        </group>
+                        <group string="Estado Actual">
+                            <field name="qty_available" readonly="1"/>
+                            <field name="replenishment_activity_count"
+                                   readonly="1"
+                                   string="Actividades Pendientes"/>
+                        </group>
+                    </group>
+                    <div class="oe_button_box" name="replenishment_buttons">
+                        <button name="action_view_replenishment_activities"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-bell"
+                                groups="stock.group_stock_user">
+                            <field name="replenishment_activity_count"
+                                   widget="statinfo"
+                                   string="Actividades"/>
+                        </button>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Herencia de la vista lista de productos                      -->
+    <!-- ============================================================ -->
+    <record id="product_template_list_view_replenishment" model="ir.ui.view">
+        <field name="name">product.template.list.replenishment</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="attributes">
+                <attribute name="decoration-danger">needs_replenishment == True and replenishment_priority == 'high'</attribute>
+                <attribute name="decoration-warning">needs_replenishment == True and replenishment_priority == 'medium'</attribute>
+                <attribute name="decoration-info">needs_replenishment == True and replenishment_priority == 'low'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='type']" position="after">
+                <field name="replenishment_priority" optional="show"/>
+                <field name="target_stock" optional="show"/>
+                <field name="needs_replenishment" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

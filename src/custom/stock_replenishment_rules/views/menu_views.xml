@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Menús del módulo bajo Inventario                             -->
+    <!-- ============================================================ -->
+
+    <!-- Menú principal bajo Inventario > Operaciones -->
+    <menuitem id="menu_stock_replenishment_priority"
+              name="Reabastecimiento por Prioridad"
+              parent="stock.menu_stock_warehouse_mgmt"
+              action="action_stock_replenishment_rules"
+              sequence="20"
+              groups="stock.group_stock_user"/>
+
+    <!--
+        FIX: Se eliminó el menuitem 'menu_stock_replenishment_config' que no
+             tenía acción asignada ni hijos. Un menuitem sin acción y sin hijos
+             en Odoo 17 aparece como entrada de menú vacía que no hace nada,
+             causando confusión al usuario.
+             Si en el futuro se requiere configuración específica, agregar aquí
+             con una acción concreta (ej: parámetros del sistema, ajuste de cron).
+    -->
+
+</odoo>
