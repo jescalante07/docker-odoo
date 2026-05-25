@@ -1,0 +1,122 @@
+services:
+  db:
+    shm_size: '126mb'
+    command: ["postgres", "-c", "config_file=/etc/postgres/dbconfigs/postgresql.conf"]
+    restart: always
+    container_name: ${PROJECT_NAME}_db
+    build:
+      context: .
+      dockerfile: ./.resources/db.Dockerfile
+      args:
+        POSTGRES_IMG_VERSION: ${POSTGRES_IMG_VERSION}
+    image: local_odoo_db_${PROJECT_NAME}:${POSTGRES_IMG_VERSION}
+    ports:
+      - "${EXTERNAL_PORT_POSTGRES}:5433"
+    networks:
+      binaural:
+        aliases:
+          - db
+    volumes:
+      - ./.resources/dbconfigs:/etc/postgres/dbconfigs
+      - odoo-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+  odoo:
+    command: odoo --dev=all
+    restart: always
+    container_name: ${PROJECT_NAME}
+    build:
+      context: .
+      dockerfile: ./.resources/Dockerfile
+    image: local_odoo_${PROJECT_NAME}:${ODOO_MINOR}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    networks:
+      binaural:
+    volumes:
+      - odoo-web:/var/lib/odoo
+      - ./src:/home/odoo/src
+      - ./.resources/.coveragerc:/home/odoo/.coveragerc
+      - odoo_data:/home/odoo/data
+      - py3:/usr/local/lib/
+      - py:/usr/lib/
+    environment:
+      CUSTOM_CONFIG: |-
+        [options]
+        http_port = 8069
+        longpolling_port = 8071
+      CUSTOM_REQUIREMTNS: |-
+        # custom pip librearies
+      CUSTOM_ENTRYPOINT: |-
+        #!/bin/bash
+        # pip install --user --no-cache-dir -e /home/odoo/custom/odoo
+        # pip install --user --no-cache-dir pyopenssl
+      # Hardcoded ports
+      GEVENT_PORT: 8071 # No cambiar, Nginx lo redirige internamente. Usado para longpolling (Websockets) cuando hay mas de 1 worker
+      # Postgres
+      DB_HOST: db
+      DB_PORT: 5433
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGHOST: db
+      PGPORT: 5433
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # Odoo
+      SMTP_SERVER: mailhog
+      SMTP_PORT: 1025
+      DBFILTER: ${DBFILTER}
+      SERVER_WIDE_MODULES: ${SERVER_WIDE_MODULES}
+      WORKERS: ${WORKERS}
+      LIST_DB: ${LIST_DB}
+      DB_NAME: ${DB_NAME}
+      WITHOUT_DEMO: ${WITHOUT_DEMO}
+      PROXY_MODE: ${PROXY_MODE}
+      SERVER_MODE: ${SERVER_MODE}
+      AEROO_DOCS_HOST: ${AEROO_DOCS_HOST}
+      UNACCENT: ${UNACCENT}
+      LOG_LEVEL: info
+      # Performance tuning
+      LIMIT_MEMORY_SOFT: ${LIMIT_MEMORY_SOFT}
+      LIMIT_MEMORY_HARD: ${LIMIT_MEMORY_HARD}
+      MAX_CRON_THREADS: ${MAX_CRON_THREADS}
+      LIMIT_TIME_REAL_CRON: ${LIMIT_TIME_REAL_CRON}
+      LIMIT_TIME_REAL: ${LIMIT_TIME_REAL}
+      LIMIT_TIME_CPU: ${LIMIT_TIME_CPU}
+      DB_MAXCONN: ${DB_MAXCONN}
+    depends_on:
+      - db
+
+  nginx:
+    restart: always
+    container_name: ${PROJECT_NAME}-nginx
+    image: nginx:latest
+    depends_on:
+      - odoo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${EXTERNAL_PORT_ODOO}:80"
+    networks:
+      binaural:
+    volumes:
+      - ./.resources/nginx_configs/odoo.conf:/etc/nginx/conf.d/default.conf
+
+volumes:
+  odoo-web:
+  odoo_data:
+  odoo-db:
+  py3:
+  py:
+
+networks:
+  binaural:
+    driver: bridge
+    name: ${PROJECT_NAME}-odoo-${ODOO_VERSION}
+
