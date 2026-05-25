@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         DATOS DEMO: Etiquetas Operativas de ejemplo
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Etiquetas de Picking -->
+    <record id="tag_picking_priority_a" model="stock.operation.tag">
+        <field name="name">Picking Prioridad A</field>
+        <field name="color">10</field>
+        <field name="operation_type">picking</field>
+        <field name="description">Productos de alta rotación que deben ser recogidos primero en rutas de picking.</field>
+    </record>
+
+    <record id="tag_picking_fragile" model="stock.operation.tag">
+        <field name="name">Picking Frágil</field>
+        <field name="color">1</field>
+        <field name="operation_type">picking</field>
+        <field name="description">Productos que requieren manipulación especial durante el picking.</field>
+    </record>
+
+    <record id="tag_picking_cold_chain" model="stock.operation.tag">
+        <field name="name">Cadena de Frío</field>
+        <field name="color">4</field>
+        <field name="operation_type">picking</field>
+        <field name="description">Productos que requieren cadena de frío durante el picking y transporte.</field>
+    </record>
+
+    <!-- Etiquetas de Almacenamiento -->
+    <record id="tag_storage_high_bay" model="stock.operation.tag">
+        <field name="name">Almacenaje Alto</field>
+        <field name="color">2</field>
+        <field name="operation_type">storage</field>
+        <field name="description">Productos almacenados en estantes de gran altura, requieren montacargas.</field>
+    </record>
+
+    <record id="tag_storage_hazmat" model="stock.operation.tag">
+        <field name="name">Material Peligroso</field>
+        <field name="color">9</field>
+        <field name="operation_type">storage</field>
+        <field name="description">Productos con sustancias peligrosas que requieren área especial de almacenamiento.</field>
+    </record>
+
+    <record id="tag_storage_bulk" model="stock.operation.tag">
+        <field name="name">Granel</field>
+        <field name="color">3</field>
+        <field name="operation_type">storage</field>
+        <field name="description">Productos almacenados a granel sin empaque individual.</field>
+    </record>
+
+    <!-- Etiquetas de Despacho -->
+    <record id="tag_dispatch_express" model="stock.operation.tag">
+        <field name="name">Despacho Express</field>
+        <field name="color">7</field>
+        <field name="operation_type">dispatch</field>
+        <field name="description">Productos que deben despacharse en el día o en menos de 24 horas.</field>
+    </record>
+
+    <record id="tag_dispatch_oversized" model="stock.operation.tag">
+        <field name="name">Carga Sobredimensionada</field>
+        <field name="color">8</field>
+        <field name="operation_type">dispatch</field>
+        <field name="description">Productos que requieren transporte especial por sus dimensiones o peso.</field>
+    </record>
+
+    <!-- Etiquetas de Recepción -->
+    <record id="tag_reception_quality_check" model="stock.operation.tag">
+        <field name="name">Control de Calidad en Recepción</field>
+        <field name="color">6</field>
+        <field name="operation_type">reception</field>
+        <field name="description">Productos que requieren inspección de calidad antes de ingresar al almacén.</field>
+    </record>
+
+    <!-- Etiquetas de Calidad -->
+    <record id="tag_quality_lot_tracking" model="stock.operation.tag">
+        <field name="name">Trazabilidad por Lote</field>
+        <field name="color">5</field>
+        <field name="operation_type">quality</field>
+        <field name="description">Productos que requieren seguimiento por número de lote o serie.</field>
+    </record>
+
+</odoo>

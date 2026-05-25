@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!--
+         WIZARD: Asignación Rápida de Etiquetas Operativas
+         Se abre en un diálogo modal desde la vista de productos
+         -->
+
+    <record id="view_assign_operation_tag_wizard_form" model="ir.ui.view">
+        <field name="name">stock.operation.tag.wizard.form</field>
+        <field name="model">stock.operation.tag.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Asignar Etiquetas Operativas">
+                <sheet>
+                    <!-- Cabecera con nombre del producto -->
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-3" role="alert">
+                        <i class="fa fa-cube fa-lg"/>
+                        <div>
+                            <strong>Producto: </strong>
+                            <field name="product_name" readonly="1" class="fw-bold"/>
+                        </div>
+                    </div>
+
+                    <field name="product_id" invisible="1"/>
+
+                    <group>
+                        <group string="Filtrar Etiquetas">
+                            <field name="filter_operation_type"
+                                   widget="radio"
+                                   options="{'horizontal': True}"/>
+                        </group>
+                    </group>
+
+                    <!-- Etiquetas disponibles para selección rápida -->
+                    <group string="Etiquetas Disponibles">
+                        <field name="available_tag_ids"
+                               nolabel="1"
+                               widget="many2many_tags"
+                               readonly="1"
+                               options="{'color_field': 'color'}"/>
+                    </group>
+
+                    <separator string="Etiquetas Seleccionadas"/>
+
+                    <group>
+                        <field name="tag_ids"
+                               widget="many2many_tags"
+                               options="{'color_field': 'color', 'no_create_edit': False}"
+                               domain="[('active','=',True)]"
+                               placeholder="Selecciona las etiquetas a asignar..."
+                               nolabel="1"/>
+                    </group>
+
+                    <group string="Notas Internas" optional="hide">
+                        <field name="notes"
+                               nolabel="1"
+                               placeholder="Notas sobre la asignación..."/>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <button name="action_apply"
+                            type="object"
+                            string="Aplicar Etiquetas"
+                            class="btn-primary"
+                            data-hotkey="q"/>
+                    <button name="action_add_by_type"
+                            type="object"
+                            string="Añadir Todas del Tipo"
+                            class="btn-secondary"
+                            invisible="filter_operation_type == 'all'"/>
+                    <button name="action_clear_tags"
+                            type="object"
+                            string="Limpiar Selección"
+                            class="btn-warning"/>
+                    <button string="Cancelar"
+                            class="btn-secondary"
+                            special="cancel"
+                            data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

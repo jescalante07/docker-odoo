@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!--
+         VISTA KANBAN PRINCIPAL: Productos agrupados por etiquetas operativas
+         Accessible desde Inventario → Productos → Vista Kanban Operativa
+          -->
+
+    <!-- Vista Kanban con diseño operativo enriquecido -->
+    <record id="view_product_template_kanban_operational" model="ir.ui.view">
+        <field name="name">product.template.kanban.operational</field>
+        <field name="model">product.template</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <kanban
+                default_group_by="operation_tag_ids"
+                class="o_kanban_small_column o_product_kanban_operational"
+                quick_create="false"
+                group_create="false">
+
+                <field name="name"/>
+                <field name="default_code"/>
+                <field name="categ_id"/>
+                <field name="type"/>
+                <field name="active"/>
+                <field name="operation_tag_ids"/>
+                <field name="primary_operation_type"/>
+                <field name="operation_tag_count"/>
+                <field name="image_128"/>
+                <field name="uom_id"/>
+                <field name="list_price"/>
+                <field name="standard_price"/>
+
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click o_product_kanban_card">
+
+                            <!-- Cabecera: imagen + nombre -->
+                            <div class="o_kanban_record_top d-flex align-items-start gap-2 mb-2">
+                                <div class="o_product_image_wrapper flex-shrink-0"
+                                     style="width:48px; height:48px; overflow:hidden; border-radius:6px; background:#f8f9fa; display:flex; align-items:center; justify-content:center;">
+                                    <img t-if="record.image_128.raw_value"
+                                         t-att-src="kanban_image('product.template', 'image_128', record.id.raw_value)"
+                                         style="max-width:100%; max-height:100%; object-fit:cover;"
+                                         class="o_image_64_contain"/>
+                                    <i t-else="" class="fa fa-cube fa-2x text-muted"/>
+                                </div>
+                                <div class="o_kanban_record_headings flex-grow-1 overflow-hidden">
+                                    <strong class="o_kanban_record_title text-truncate d-block">
+                                        <field name="name"/>
+                                    </strong>
+                                    <small class="text-muted" t-if="record.default_code.raw_value">
+                                        [<field name="default_code"/>]
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Cuerpo: categoría + tipo -->
+                            <div class="o_kanban_record_body mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-folder-o me-1"/>
+                                        <field name="categ_id"/>
+                                    </span>
+                                    <span t-if="record.operation_tag_count.raw_value"
+                                          class="badge text-bg-info">
+                                        <field name="operation_tag_count"/> etiquetas
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Etiquetas operativas -->
+                            <div class="o_kanban_record_bottom">
+                                <div class="oe_kanban_bottom_left d-flex flex-wrap gap-1">
+                                    <field name="operation_tag_ids"
+                                           widget="many2many_tags"
+                                           options="{'color_field': 'color'}"/>
+                                </div>
+                                <div class="oe_kanban_bottom_right">
+                                    <!-- Botón acción rápida de etiquetas -->
+                                    <a name="action_quick_assign_tags"
+                                       type="object"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Asignar etiquetas operativas"
+                                       role="button">
+                                        <i class="fa fa-tags"/>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Vista de búsqueda para la vista kanban operativa -->
+    <record id="view_product_kanban_operational_search" model="ir.ui.view">
+        <field name="name">product.template.kanban.operational.search</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Productos Operativos">
+                <field name="name" string="Producto"/>
+                <field name="default_code" string="Referencia"/>
+                <field name="categ_id" string="Categoría"/>
+                <field name="operation_tag_ids" string="Etiqueta Operativa"/>
+                <separator/>
+                <!-- Filtros por tipo de operación -->
+                <filter name="filter_picking"
+                        string="🚚 Picking"
+                        domain="[('operation_tag_ids.operation_type','=','picking')]"/>
+                <filter name="filter_storage"
+                        string="📦 Almacenamiento"
+                        domain="[('operation_tag_ids.operation_type','=','storage')]"/>
+                <filter name="filter_dispatch"
+                        string="🚀 Despacho"
+                        domain="[('operation_tag_ids.operation_type','=','dispatch')]"/>
+                <filter name="filter_reception"
+                        string="📥 Recepción"
+                        domain="[('operation_tag_ids.operation_type','=','reception')]"/>
+                <filter name="filter_quality"
+                        string="🔍 Calidad"
+                        domain="[('operation_tag_ids.operation_type','=','quality')]"/>
+                <separator/>
+                <filter name="filter_unclassified"
+                        string="Sin Clasificar"
+                        domain="[('operation_tag_ids','=',False)]"/>
+                <filter name="filter_storable"
+                        string="Almacenables"
+                        domain="[('type','=','consu')]"/>
+                <!-- Agrupaciones -->
+                <group expand="1" string="Agrupar por">
+                    <filter name="group_by_tags"
+                            string="Etiquetas Operativas"
+                            context="{'group_by': 'operation_tag_ids'}"/>
+                    <filter name="group_by_operation_type"
+                            string="Tipo de Operación"
+                            context="{'group_by': 'primary_operation_type'}"/>
+                    <filter name="group_by_category"
+                            string="Categoría"
+                            context="{'group_by': 'categ_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+        <!-- Acción de la Vista Kanban Operativa  -->
+
+    <record id="action_product_kanban_operational" model="ir.actions.act_window">
+        <field name="name">Productos Operativos</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_ids"
+               eval="[(5, 0, 0),
+                      (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_product_template_kanban_operational')}),
+                      (0, 0, {'view_mode': 'tree'}),
+                      (0, 0, {'view_mode': 'form'})]"/>
+        <field name="search_view_id" ref="view_product_kanban_operational_search"/>
+        <field name="context">{
+            'group_by': 'operation_tag_ids',
+            'search_default_group_by_tags': 1
+        }</field>
+        <field name="domain">[('type', 'in', ['consu', 'product'])]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay productos con etiquetas operativas
+            </p>
+            <p>
+                Asigna etiquetas operativas a tus productos para visualizarlos
+                clasificados por tipo de operación: picking, almacenamiento o despacho.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú en Inventario  -->
+
+    <menuitem id="menu_product_kanban_operational"
+              name="Clasificación Operativa"
+              parent="stock.menu_stock_warehouse_mgmt"
+              action="stock_product_classification.action_product_kanban_operational"
+              sequence="15"
+              groups="stock.group_stock_user"
+              /><!-- icon="fa-tags"-->
+
+</odoo>

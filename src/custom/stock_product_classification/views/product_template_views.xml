@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+
+    <!--
+         EXTENSIÓN DE VISTAS: product.template
+         Añade las etiquetas operativas al formulario y lista de productos
+          -->
+
+    <!-- Extensión del formulario de producto -->
+    <record id="view_product_template_form_operation_tags" model="ir.ui.view">
+        <field name="name">product.template.form.operation.tags</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Botón de acceso rápido en el button_box -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_operation_tags"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-tags"
+                        invisible="operation_tag_count == 0">
+                    <field name="operation_tag_count" widget="statinfo" string="Etiquetas Op."/>
+                </button>
+            </xpath>
+
+            <!-- Añadir campo de etiquetas en la pestaña General -->
+            <xpath expr="//page[@name='general_information']" position="inside">
+                <group string="Clasificación Operativa" name="operation_tags_group">
+                    <field name="operation_tag_ids"
+                           widget="many2many_tags"
+                           options="{'color_field': 'color', 'no_create_edit': False}"
+                           domain="[('active','=',True)]"
+                           context="{'default_operation_type': 'picking'}"/>
+                    <field name="primary_operation_type" readonly="1"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Extensión de la vista lista de productos (Inventario) -->
+    <record id="view_product_template_list_operation_tags" model="ir.ui.view">
+        <field name="name">product.template.list.operation.tags</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="operation_tag_ids"
+                       widget="many2many_tags"
+                       options="{'color_field': 'color'}"
+                       optional="show"
+                       string="Etiquetas Op."/>
+                <field name="primary_operation_type"
+                       optional="show"
+                       string="Tipo Operación"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Búsqueda extendida para filtrar por etiquetas operativas -->
+    <record id="view_product_template_search_operation_tags" model="ir.ui.view">
+        <field name="name">product.template.search.operation.tags</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/separator[last()]" position="after">
+                <separator/>
+                <field name="operation_tag_ids"
+                       string="Etiqueta Operativa"
+                       filter_domain="[('operation_tag_ids', 'ilike', self)]"/>
+                <filter name="filter_picking"
+                        string="Picking"
+                        domain="[('operation_tag_ids.operation_type','=','picking')]"/>
+                <filter name="filter_storage"
+                        string="Almacenamiento"
+                        domain="[('operation_tag_ids.operation_type','=','storage')]"/>
+                <filter name="filter_dispatch"
+                        string="Despacho"
+                        domain="[('operation_tag_ids.operation_type','=','dispatch')]"/>
+                <filter name="filter_unclassified"
+                        string="Sin Etiqueta"
+                        domain="[('operation_tag_ids','=',False)]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter name="group_by_operation_type"
+                        string="Tipo de Operación"
+                        context="{'group_by': 'primary_operation_type'}"/>
+                <filter name="group_by_operation_tags"
+                        string="Etiquetas Operativas"
+                        context="{'group_by': 'operation_tag_ids'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ─── Acción Rápida desde Lista (server action) ──────────────────────── -->
+
+    <record id="action_quick_assign_operation_tags" model="ir.actions.server">
+        <field name="name">Asignar Etiquetas Operativas</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">tree,kanban</field>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    record = records[0]
+    action = record.action_quick_assign_tags()
+    action['context']['active_ids'] = records.ids
+    action = action
+        </field>
+    </record>
+
+    <record id="action_remove_all_operation_tags" model="ir.actions.server">
+        <field name="name">Remover Todas las Etiquetas Operativas</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">tree,kanban</field>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    action = records.action_remove_all_tags()
+        </field>
+    </record>
+
+</odoo>
