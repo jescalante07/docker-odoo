@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <!--
+         VISTAS: account.collection.alert  (TABLERO)
+    -->
+
+    <!-- Vista Lista / Tablero principal -->
+    <record id="view_account_collection_alert_tree" model="ir.ui.view">
+        <field name="name">account.collection.alert.tree</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <tree string="Alertas de Cobro"
+                  decoration-danger="risk_level == 'high'"
+                  decoration-warning="risk_level == 'medium'"
+                  decoration-success="risk_level == 'low'"
+                  default_order="risk_level desc, days_overdue desc">
+                <field name="invoice_name" string="Factura"/>
+                <field name="partner_id"/>
+                <field name="invoice_date"/>
+                <field name="invoice_date_due" string="Vencimiento"/>
+                <field name="days_overdue" string="Días Vencidos"/>
+                <field name="amount_residual" widget="monetary"
+                       options="{'currency_field': 'currency_id'}" string="Saldo Pendiente"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="risk_level" widget="badge"
+                       decoration-danger="risk_level == 'high'"
+                       decoration-warning="risk_level == 'medium'"
+                       decoration-success="risk_level == 'low'"/>
+                <field name="rule_id" string="Regla Aplicada" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'open'"
+                       decoration-success="state == 'resolved'"
+                       decoration-muted="state == 'ignored'"/>
+                <field name="last_evaluated" optional="hide"/>
+                <button name="action_resolve" type="object" string="Resolver"
+                        icon="fa-check" invisible="state != 'open'"/>
+                <button name="action_ignore" type="object" string="Ignorar"
+                        icon="fa-times" invisible="state != 'open'"/>
+                <button name="action_reopen" type="object" string="Reabrir"
+                        icon="fa-undo" invisible="state == 'open'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Kanban (Tablero por nivel de riesgo) -->
+    <record id="view_account_collection_alert_kanban" model="ir.ui.view">
+        <field name="name">account.collection.alert.kanban</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="risk_level" class="o_kanban_small_column"
+                    group_create="false">
+                <field name="risk_level"/>
+                <field name="invoice_id"/>
+                <field name="partner_id"/>
+                <field name="days_overdue"/>
+                <field name="amount_residual"/>
+                <field name="currency_id"/>
+                <field name="state"/>
+                <field name="invoice_date_due"/>
+                <field name="invoice_name"/>
+                <field name="rule_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click
+                            #{record.risk_level.raw_value == 'high' ? 'border-danger' :
+                              record.risk_level.raw_value == 'medium' ? 'border-warning' :
+                              'border-success'}">
+                            <div class="oe_kanban_content">
+                                <!-- Encabezado -->
+                                <div class="o_kanban_record_top mb8">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title">
+                                            <field name="invoice_name"/>
+                                        </strong>
+                                    </div>
+                                    <field name="state" widget="label_selection"
+                                           options="{'classes': {
+                                               'open': 'info',
+                                               'resolved': 'success',
+                                               'ignored': 'default'
+                                           }}"/>
+                                </div>
+                                <!-- Cuerpo -->
+                                <div class="o_kanban_record_body">
+                                    <div>
+                                        <i class="fa fa-user-o me-1"/>
+                                        <field name="partner_id"/>
+                                    </div>
+                                    <div class="mt4">
+                                        <i class="fa fa-calendar-times-o me-1"/>
+                                        Vence: <field name="invoice_date_due"/>
+                                    </div>
+                                    <div class="mt4 fw-bold">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <field name="days_overdue"/> días vencido
+                                    </div>
+                                </div>
+                                <!-- Pie de tarjeta -->
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <span class="fw-bold text-muted">
+                                            Pendiente:
+                                        </span>
+                                        <field name="amount_residual" widget="monetary"
+                                               options="{'currency_field': 'currency_id'}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Vista Formulario de Alerta -->
+    <record id="view_account_collection_alert_form" model="ir.ui.view">
+        <field name="name">account.collection.alert.form</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <form string="Alerta de Cobro">
+                <header>
+                    <button name="action_resolve" type="object" string="Marcar Resuelta"
+                            class="btn-primary" invisible="state != 'open'"/>
+                    <button name="action_ignore" type="object" string="Ignorar"
+                            invisible="state != 'open'"/>
+                    <button name="action_reopen" type="object" string="Reabrir"
+                            invisible="state == 'open'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="open,resolved,ignored"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="invoice_id"/>
+                        <h1>
+                            <field name="invoice_id" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Información de la Factura">
+                            <field name="partner_id" readonly="1"/>
+                            <field name="invoice_date" readonly="1"/>
+                            <field name="invoice_date_due" readonly="1"/>
+                            <field name="amount_residual" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Clasificación de Riesgo">
+                            <field name="days_overdue" readonly="1"/>
+                            <field name="risk_level" widget="radio"/>
+                            <field name="rule_id"/>
+                            <field name="last_evaluated" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Notas">
+                        <field name="notes" nolabel="1"
+                               placeholder="Notas o comentarios sobre esta alerta..."/>
+                    </group>
+                    <div class="oe_chatter">
+                        <button name="action_view_invoice" type="object"
+                                string="Ver Factura" class="btn-link"/>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Búsqueda -->
+    <record id="view_account_collection_alert_search" model="ir.ui.view">
+        <field name="name">account.collection.alert.search</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Alertas">
+                <field name="invoice_id" string="Factura"/>
+                <field name="partner_id" string="Cliente"/>
+                <field name="risk_level"/>
+                <separator/>
+                <filter string="Abiertas" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="Resueltas" name="resolved" domain="[('state', '=', 'resolved')]"/>
+                <filter string="Ignoradas" name="ignored" domain="[('state', '=', 'ignored')]"/>
+                <separator/>
+                <filter string="Riesgo Alto" name="high" domain="[('risk_level', '=', 'high')]"/>
+                <filter string="Riesgo Medio" name="medium" domain="[('risk_level', '=', 'medium')]"/>
+                <filter string="Riesgo Bajo" name="low" domain="[('risk_level', '=', 'low')]"/>
+                <group expand="1" string="Agrupar por">
+                    <filter string="Nivel de Riesgo" name="group_risk"
+                            context="{'group_by': 'risk_level'}"/>
+                    <filter string="Estado" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Cliente" name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Vista Gráfico -->
+    <record id="view_account_collection_alert_graph" model="ir.ui.view">
+        <field name="name">account.collection.alert.graph</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <graph string="Distribución de Riesgo" type="pie">
+                <field name="risk_level"/>
+                <field name="amount_residual" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Vista Pivot -->
+    <record id="view_account_collection_alert_pivot" model="ir.ui.view">
+        <field name="name">account.collection.alert.pivot</field>
+        <field name="model">account.collection.alert</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de Alertas de Cobro">
+                <field name="risk_level" type="row"/>
+                <field name="state" type="col"/>
+                <field name="amount_residual" type="measure"/>
+                <field name="days_overdue" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Acción principal del tablero -->
+    <record id="action_account_collection_alert" model="ir.actions.act_window">
+        <field name="name">Tablero de Alertas de Cobro</field>
+        <field name="res_model">account.collection.alert</field>
+        <field name="view_mode">kanban,tree,graph,pivot,form</field>
+        <field name="search_view_id" ref="view_account_collection_alert_search"/>
+        <field name="context">{'search_default_open': 1, 'search_default_group_risk': 1}</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_account_collection_alert_kanban')}),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_account_collection_alert_tree')}),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_account_collection_alert_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_account_collection_alert_pivot')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_account_collection_alert_form')}),
+        ]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay alertas de cobro activas
+            </p>
+            <p>
+                Haz clic en <strong>Evaluar Facturas</strong> para generar
+                alertas automáticas basadas en las reglas configuradas.
+            </p>
+        </field>
+    </record>
+
+    <!-- Acción del servidor para evaluar facturas -->
+    <record id="action_evaluate_invoices" model="ir.actions.server">
+        <field name="name">Evaluar Facturas Vencidas</field>
+        <field name="model_id" ref="model_account_collection_alert"/>
+        <field name="state">code</field>
+        <field name="code">
+action = env['account.collection.alert'].action_evaluate_all_invoices()
+        </field>
+    </record>
+</odoo>

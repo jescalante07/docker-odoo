@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <!--
+         MENÚS
+    -->
+
+    <!-- Menú principal bajo Contabilidad > Clientes -->
+    <menuitem
+        id="menu_account_collection_alert_root"
+        name="Alertas de Cobro"
+        parent="account.menu_finance_receivables"
+        sequence="150"/>
+
+    <!-- Submenú: Tablero -->
+    <menuitem
+        id="menu_account_collection_alert_dashboard"
+        name="Tablero de Riesgo"
+        parent="menu_account_collection_alert_root"
+        action="action_account_collection_alert"
+        sequence="10"/>
+
+    <!-- Submenú: Configuración de Reglas -->
+    <menuitem
+        id="menu_account_collection_alert_rules"
+        name="Reglas de Riesgo"
+        parent="menu_account_collection_alert_root"
+        action="action_account_collection_alert_rule"
+        sequence="20"
+        groups="account.group_account_manager"/>
+</odoo>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <!--
+         VISTAS: account.collection.alert.rule
+    -->
+
+    <!-- Vista Lista -->
+    <record id="view_account_collection_alert_rule_tree" model="ir.ui.view">
+        <field name="name">account.collection.alert.rule.tree</field>
+        <field name="model">account.collection.alert.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Reglas de Alerta de Cobro" decoration-danger="risk_level == 'high'"
+                  decoration-warning="risk_level == 'medium'" decoration-success="risk_level == 'low'">
+                <field name="name"/>
+                <field name="days_overdue"/>
+                <field name="amount_min" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="risk_level" widget="badge"
+                       decoration-danger="risk_level == 'high'"
+                       decoration-warning="risk_level == 'medium'"
+                       decoration-success="risk_level == 'low'"/>
+                <field name="alert_count" string="Facturas en Alerta"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Formulario -->
+    <record id="view_account_collection_alert_rule_form" model="ir.ui.view">
+        <field name="name">account.collection.alert.rule.form</field>
+        <field name="model">account.collection.alert.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de Alerta de Cobro">
+                <sheet>
+                    <widget name="web_ribbon" text="Inactivo" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Nombre de la regla..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Criterios de Activación">
+                            <field name="days_overdue"/>
+                            <field name="amount_min" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                        </group>
+                        <group string="Clasificación">
+                            <field name="risk_level" widget="radio"/>
+                            <field name="active"/>
+                            <field name="alert_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Descripción">
+                        <field name="description" nolabel="1"
+                               placeholder="Descripción de cuándo aplica esta regla..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Búsqueda -->
+    <record id="view_account_collection_alert_rule_search" model="ir.ui.view">
+        <field name="name">account.collection.alert.rule.search</field>
+        <field name="model">account.collection.alert.rule</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Reglas">
+                <field name="name"/>
+                <field name="risk_level"/>
+                <filter string="Riesgo Bajo" name="risk_low"
+                        domain="[('risk_level', '=', 'low')]"/>
+                <filter string="Riesgo Medio" name="risk_medium"
+                        domain="[('risk_level', '=', 'medium')]"/>
+                <filter string="Riesgo Alto" name="risk_high"
+                        domain="[('risk_level', '=', 'high')]"/>
+                <separator/>
+                <filter string="Activas" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactivas" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Nivel de Riesgo" name="group_risk_level"
+                            context="{'group_by': 'risk_level'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción -->
+    <record id="action_account_collection_alert_rule" model="ir.actions.act_window">
+        <field name="name">Reglas de Riesgo de Cobro</field>
+        <field name="res_model">account.collection.alert.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_account_collection_alert_rule_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ¡Crea tu primera regla de riesgo de cobro!
+            </p>
+            <p>
+                Define reglas basadas en días de atraso y monto mínimo
+                para clasificar automáticamente las facturas vencidas.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  © 2026 (Jamie Escalante <jamie.escalante7@gmail.com>)
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo noupdate="1">
+    <record id="collection_rule_low" model="account.collection.alert.rule">
+        <field name="name">Riesgo Bajo - Inicio de Atraso</field>
+        <field name="days_overdue">1</field>
+        <field name="amount_min">0.01</field>
+        <field name="risk_level">low</field>
+        <field name="description">Facturas con 1 a 14 días de atraso. Monitoreo preventivo.</field>
+    </record>
+
+    <record id="collection_rule_medium" model="account.collection.alert.rule">
+        <field name="name">Riesgo Medio - Atraso Moderado</field>
+        <field name="days_overdue">15</field>
+        <field name="amount_min">100.0</field>
+        <field name="risk_level">medium</field>
+        <field name="description">Facturas con 15 a 29 días de atraso y monto superior a 100. Requiere seguimiento activo.</field>
+    </record>
+
+    <record id="collection_rule_high" model="account.collection.alert.rule">
+        <field name="name">Riesgo Alto - Atraso Crítico</field>
+        <field name="days_overdue">30</field>
+        <field name="amount_min">500.0</field>
+        <field name="risk_level">high</field>
+        <field name="description">Facturas con 30+ días de atraso y monto superior a 500. Acción inmediata requerida.</field>
+    </record>
+</odoo>

@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_account_collection_alert_rule_manager,account.collection.alert.rule manager,model_account_collection_alert_rule,account.group_account_manager,1,1,1,1
+access_account_collection_alert_rule_user,account.collection.alert.rule user,model_account_collection_alert_rule,account.group_account_user,1,0,0,0
+access_account_collection_alert_manager,account.collection.alert manager,model_account_collection_alert,account.group_account_manager,1,1,1,1
+access_account_collection_alert_user,account.collection.alert user,model_account_collection_alert,account.group_account_user,1,1,1,0
